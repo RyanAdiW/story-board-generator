@@ -1,4 +1,4 @@
-package httpapi
+package httpadapter
 
 import "github.com/labstack/echo/v4"
 

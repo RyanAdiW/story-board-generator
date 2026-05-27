@@ -1,4 +1,4 @@
-# Story Board Generator Backend (Milestone 1)
+# Story Board Generator Backend (Milestone 2)
 
 This repository now includes Milestone 1 and Milestone 2 backend basics:
 
@@ -10,6 +10,22 @@ This repository now includes Milestone 1 and Milestone 2 backend basics:
 - RabbitMQ-backed async job queue
 - worker service for background processing
 - job polling endpoint with real status transitions
+
+## Architecture Layout
+
+The project now follows this layered structure:
+
+- `cmd/api`, `cmd/worker`
+- `internal/app`
+- `internal/domain`
+- `internal/ports`
+- `internal/adapters/http`
+- `internal/adapters/postgres`
+- `internal/adapters/redis`
+- `internal/adapters/storage`
+- `internal/adapters/ai`
+- `internal/adapters/renderer`
+- `internal/worker`
 
 ## API Endpoints
 
@@ -65,3 +81,9 @@ make run-worker
 ```
 
 `make` expects `go` to be available in your shell PATH.
+
+## Docker Compose
+
+```bash
+docker compose up --build
+```

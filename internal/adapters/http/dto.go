@@ -1,4 +1,4 @@
-package httpapi
+package httpadapter
 
 type createStoryboardResponse struct {
 	ProjectID string `json:"project_id"`

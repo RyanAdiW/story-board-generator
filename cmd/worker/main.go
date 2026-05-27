@@ -6,27 +6,29 @@ import (
 	"os/signal"
 	"syscall"
 
+	"story-board-generator/internal/adapters/postgres"
+	queueadapter "story-board-generator/internal/adapters/redis"
+	"story-board-generator/internal/app"
 	"story-board-generator/internal/config"
-	"story-board-generator/internal/queue"
-	"story-board-generator/internal/store"
 	"story-board-generator/internal/worker"
 )
 
 func main() {
 	cfg := config.FromEnv()
 
-	repo, err := store.New(cfg.DataDir)
+	repo, err := postgres.NewRepository(cfg.DataDir)
 	if err != nil {
-		log.Fatalf("init store: %v", err)
+		log.Fatalf("init repository: %v", err)
 	}
 
-	consumer, err := queue.NewConsumer(cfg.RabbitMQURL, cfg.RabbitMQQueue)
+	consumer, err := queueadapter.NewQueue(cfg.RabbitMQURL, cfg.RabbitMQQueue)
 	if err != nil {
 		log.Fatalf("init rabbitmq consumer: %v", err)
 	}
 	defer consumer.Close()
 
-	processor := worker.NewProcessor(repo)
+	generationService := app.NewGenerationService(repo)
+	processor := worker.NewProcessor(generationService)
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 

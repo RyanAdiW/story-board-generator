@@ -2,37 +2,22 @@ package worker
 
 import (
 	"context"
-	"fmt"
-	"time"
 
-	"story-board-generator/internal/queue"
-	"story-board-generator/internal/store"
+	"story-board-generator/internal/ports"
 )
 
+type StoryboardGenerator interface {
+	ProcessStoryboardGenerate(ctx context.Context, payload ports.StoryboardGeneratePayload) error
+}
+
 type Processor struct {
-	repo *store.Store
+	generator StoryboardGenerator
 }
 
-func NewProcessor(repo *store.Store) *Processor {
-	return &Processor{repo: repo}
+func NewProcessor(generator StoryboardGenerator) *Processor {
+	return &Processor{generator: generator}
 }
 
-func (p *Processor) ProcessStoryboardGenerate(_ context.Context, payload queue.StoryboardGeneratePayload) error {
-	if err := p.repo.UpdateJobProcessing(payload.ProjectID, payload.JobID, "analyzing_product"); err != nil {
-		return fmt.Errorf("set processing state: %w", err)
-	}
-	time.Sleep(1 * time.Second)
-
-	if err := p.repo.UpdateJobProcessing(payload.ProjectID, payload.JobID, "generating_scenes"); err != nil {
-		_ = p.repo.UpdateJobFailed(payload.ProjectID, payload.JobID, "generating_scenes", err.Error())
-		return fmt.Errorf("update scene generation state: %w", err)
-	}
-	time.Sleep(1 * time.Second)
-
-	if err := p.repo.UpdateJobCompleted(payload.ProjectID, payload.JobID); err != nil {
-		_ = p.repo.UpdateJobFailed(payload.ProjectID, payload.JobID, "finalizing", err.Error())
-		return fmt.Errorf("set completed state: %w", err)
-	}
-
-	return nil
+func (p *Processor) ProcessStoryboardGenerate(ctx context.Context, payload ports.StoryboardGeneratePayload) error {
+	return p.generator.ProcessStoryboardGenerate(ctx, payload)
 }
