@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"story-board-generator/internal/app"
+	"story-board-generator/internal/domain"
 )
 
 type Handler struct {
@@ -94,7 +95,7 @@ func (h *Handler) GetStoryboard(c echo.Context) error {
 		"total_duration_seconds": bundle.Project.TotalDurationSeconds,
 		"assets":                 bundle.Assets,
 		"scenes":                 bundle.Scenes,
-		"final_image_url":        "",
+		"final_image_url":        finalStoryboardURL(bundle.Assets),
 	})
 }
 
@@ -117,4 +118,14 @@ func (h *Handler) GetJobStatus(c echo.Context) error {
 		"current_step":  job.CurrentStep,
 		"error_message": job.Error,
 	})
+}
+
+func finalStoryboardURL(assets []domain.Asset) string {
+	for i := len(assets) - 1; i >= 0; i-- {
+		if assets[i].AssetType == "final_storyboard_image" {
+			return assets[i].FileURL
+		}
+	}
+
+	return ""
 }

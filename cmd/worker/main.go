@@ -9,6 +9,7 @@ import (
 	aiadapter "story-board-generator/internal/adapters/ai"
 	"story-board-generator/internal/adapters/postgres"
 	queueadapter "story-board-generator/internal/adapters/rabbitmq"
+	"story-board-generator/internal/adapters/renderer"
 	"story-board-generator/internal/adapters/storage"
 	"story-board-generator/internal/app"
 	"story-board-generator/internal/config"
@@ -35,6 +36,7 @@ func main() {
 		repo,
 		sceneAIClient,
 		imageAIClient,
+		renderer.NewStoryboardRenderer(),
 		storage.NewS3Storage(cfg.UploadDir),
 	)
 	processor := worker.NewProcessor(generationService)

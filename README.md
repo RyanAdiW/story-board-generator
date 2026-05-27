@@ -1,6 +1,6 @@
-# Story Board Generator Backend (Milestone 4)
+# Story Board Generator Backend (Milestone 5)
 
-This repository now includes Milestone 1, Milestone 2, Milestone 3, and Milestone 4 backend basics:
+This repository now includes Milestone 1, Milestone 2, Milestone 3, Milestone 4, and Milestone 5 backend basics:
 
 - Echo HTTP server
 - `POST /api/v1/storyboards` endpoint
@@ -15,6 +15,8 @@ This repository now includes Milestone 1, Milestone 2, Milestone 3, and Mileston
 - uploaded product images are attached as vision inputs in the OpenAI scene generation request (up to 4 images, max 2MB each)
 - scene image generation per prompt (OpenAI image model with local fallback image)
 - generated scene image assets are stored and linked back to each scene
+- final storyboard layout renderer generates a single PNG output
+- final storyboard output is stored as `final_storyboard_image` and returned as `final_image_url`
 
 ## Architecture Layout
 

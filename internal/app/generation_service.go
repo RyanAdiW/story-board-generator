@@ -13,18 +13,20 @@ import (
 )
 
 type GenerationService struct {
-	repo    ports.Repository
-	sceneAI ports.AIClient
-	imageAI ports.ImageClient
-	storage ports.Storage
+	repo     ports.Repository
+	sceneAI  ports.AIClient
+	imageAI  ports.ImageClient
+	renderer ports.Renderer
+	storage  ports.Storage
 }
 
-func NewGenerationService(repo ports.Repository, sceneAI ports.AIClient, imageAI ports.ImageClient, storage ports.Storage) *GenerationService {
+func NewGenerationService(repo ports.Repository, sceneAI ports.AIClient, imageAI ports.ImageClient, renderer ports.Renderer, storage ports.Storage) *GenerationService {
 	return &GenerationService{
-		repo:    repo,
-		sceneAI: sceneAI,
-		imageAI: imageAI,
-		storage: storage,
+		repo:     repo,
+		sceneAI:  sceneAI,
+		imageAI:  imageAI,
+		renderer: renderer,
+		storage:  storage,
 	}
 }
 
@@ -93,12 +95,72 @@ func (s *GenerationService) ProcessStoryboardGenerate(ctx context.Context, paylo
 		return fmt.Errorf("save updated scenes: %w", err)
 	}
 
+	if err := s.repo.UpdateJobProcessing(payload.ProjectID, payload.JobID, "rendering_storyboard_layout"); err != nil {
+		_ = s.repo.UpdateJobFailed(payload.ProjectID, payload.JobID, "rendering_storyboard_layout", err.Error())
+		return fmt.Errorf("update rendering state: %w", err)
+	}
+
+	rendered, err := s.renderer.RenderStoryboard(ctx, ports.RenderStoryboardInput{
+		Project: projectWithID(payload.ProjectID, bundle.Project),
+		Scenes:  updatedScenes,
+	})
+	if err != nil {
+		_ = s.repo.UpdateJobFailed(payload.ProjectID, payload.JobID, "rendering_storyboard_layout", err.Error())
+		return fmt.Errorf("render storyboard layout: %w", err)
+	}
+
+	if err := s.repo.UpdateJobProcessing(payload.ProjectID, payload.JobID, "uploading_final_output"); err != nil {
+		_ = s.repo.UpdateJobFailed(payload.ProjectID, payload.JobID, "uploading_final_output", err.Error())
+		return fmt.Errorf("update uploading state: %w", err)
+	}
+
+	finalAsset, err := s.uploadFinalStoryboard(ctx, payload.ProjectID, rendered)
+	if err != nil {
+		_ = s.repo.UpdateJobFailed(payload.ProjectID, payload.JobID, "uploading_final_output", err.Error())
+		return fmt.Errorf("upload final storyboard: %w", err)
+	}
+	if err := s.repo.AddAssets(payload.ProjectID, []domain.Asset{finalAsset}); err != nil {
+		_ = s.repo.UpdateJobFailed(payload.ProjectID, payload.JobID, "uploading_final_output", err.Error())
+		return fmt.Errorf("persist final storyboard asset: %w", err)
+	}
+
 	if err := s.repo.UpdateJobCompleted(payload.ProjectID, payload.JobID); err != nil {
 		_ = s.repo.UpdateJobFailed(payload.ProjectID, payload.JobID, "finalizing", err.Error())
 		return fmt.Errorf("set completed state: %w", err)
 	}
 
 	return nil
+}
+
+func (s *GenerationService) uploadFinalStoryboard(ctx context.Context, projectID string, rendered ports.RenderStoryboardOutput) (domain.Asset, error) {
+	if len(rendered.Bytes) == 0 {
+		return domain.Asset{}, fmt.Errorf("renderer returned empty output")
+	}
+
+	assetID, err := newID()
+	if err != nil {
+		return domain.Asset{}, fmt.Errorf("generate final asset id: %w", err)
+	}
+	ext := extensionFromMime(rendered.MimeType)
+	objectPath := filepath.ToSlash(filepath.Join(projectID, "outputs", "final"+ext))
+	fileURL, err := s.storage.Upload(ctx, objectPath, rendered.MimeType, bytes.NewReader(rendered.Bytes))
+	if err != nil {
+		return domain.Asset{}, fmt.Errorf("upload final output: %w", err)
+	}
+
+	return domain.Asset{
+		ID:        assetID,
+		ProjectID: projectID,
+		AssetType: "final_storyboard_image",
+		FileURL:   fileURL,
+		MimeType:  rendered.MimeType,
+		CreatedAt: time.Now().UTC(),
+	}, nil
+}
+
+func projectWithID(projectID string, project domain.Project) domain.Project {
+	project.ID = projectID
+	return project
 }
 
 func (s *GenerationService) generateSceneAssets(ctx context.Context, project domain.Project, referenceAssets []domain.Asset, scenes []domain.Scene) ([]domain.Scene, []domain.Asset, error) {
