@@ -40,13 +40,17 @@ Success response:
 
 ## Environment Variables
 
-- `APP_PORT` (default `8080`)
-- `UPLOAD_DIR` (default `./uploads`)
-- `DATA_DIR` (default `./data`)
+Environment configuration is now in `.env`:
+
+- `APP_PORT`
+- `UPLOAD_DIR`
+- `DATA_DIR`
 
 ## Run
 
 ```bash
-go mod tidy
-go run ./cmd/api
+make tidy
+make run
 ```
+
+`make` expects `go` to be available in your shell PATH.
