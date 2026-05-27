@@ -176,7 +176,7 @@ func (h *Handler) GetJobStatus(c echo.Context) error {
 		"project_id":    job.ProjectID,
 		"status":        job.Status,
 		"current_step":  job.CurrentStep,
-		"error_message": null,
+		"error_message": nil,
 	})
 }
 
