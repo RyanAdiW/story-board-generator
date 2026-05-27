@@ -1,7 +1,16 @@
 package ports
 
-import "context"
+import (
+	"context"
+
+	"story-board-generator/internal/domain"
+)
 
 type AIClient interface {
-	GenerateStoryboard(ctx context.Context, prompt string) (string, error)
+	GenerateScenes(ctx context.Context, input SceneGenerationInput) ([]domain.Scene, error)
+}
+
+type SceneGenerationInput struct {
+	Project domain.Project
+	Assets  []domain.Asset
 }

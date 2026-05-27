@@ -93,6 +93,7 @@ func (h *Handler) GetStoryboard(c echo.Context) error {
 		"format":                 bundle.Project.Format,
 		"total_duration_seconds": bundle.Project.TotalDurationSeconds,
 		"assets":                 bundle.Assets,
+		"scenes":                 bundle.Scenes,
 		"final_image_url":        "",
 	})
 }

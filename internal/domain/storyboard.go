@@ -17,4 +17,5 @@ type ProjectBundle struct {
 	Project Project       `json:"project"`
 	Job     StoryboardJob `json:"job"`
 	Assets  []Asset       `json:"assets"`
+	Scenes  []Scene       `json:"scenes"`
 }

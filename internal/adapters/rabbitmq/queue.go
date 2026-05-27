@@ -1,4 +1,4 @@
-package redis
+package rabbitmq
 
 import (
 	"context"

@@ -6,8 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	aiadapter "story-board-generator/internal/adapters/ai"
 	"story-board-generator/internal/adapters/postgres"
-	queueadapter "story-board-generator/internal/adapters/redis"
+	queueadapter "story-board-generator/internal/adapters/rabbitmq"
 	"story-board-generator/internal/app"
 	"story-board-generator/internal/config"
 	"story-board-generator/internal/worker"
@@ -27,7 +28,8 @@ func main() {
 	}
 	defer consumer.Close()
 
-	generationService := app.NewGenerationService(repo)
+	aiClient := aiadapter.NewOpenAIClient(cfg.OpenAIAPIKey, cfg.OpenAITextModel)
+	generationService := app.NewGenerationService(repo, aiClient)
 	processor := worker.NewProcessor(generationService)
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()

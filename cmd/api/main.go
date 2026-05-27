@@ -5,7 +5,7 @@ import (
 
 	httpadapter "story-board-generator/internal/adapters/http"
 	"story-board-generator/internal/adapters/postgres"
-	queueadapter "story-board-generator/internal/adapters/redis"
+	queueadapter "story-board-generator/internal/adapters/rabbitmq"
 	"story-board-generator/internal/adapters/storage"
 	"story-board-generator/internal/app"
 	"story-board-generator/internal/config"

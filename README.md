@@ -1,6 +1,6 @@
-# Story Board Generator Backend (Milestone 2)
+# Story Board Generator Backend (Milestone 3)
 
-This repository now includes Milestone 1 and Milestone 2 backend basics:
+This repository now includes Milestone 1, Milestone 2, and Milestone 3 backend basics:
 
 - Echo HTTP server
 - `POST /api/v1/storyboards` endpoint
@@ -10,6 +10,8 @@ This repository now includes Milestone 1 and Milestone 2 backend basics:
 - RabbitMQ-backed async job queue
 - worker service for background processing
 - job polling endpoint with real status transitions
+- scene metadata generation in worker (OpenAI with local fallback)
+- generated scenes included in storyboard result response
 
 ## Architecture Layout
 
@@ -21,7 +23,7 @@ The project now follows this layered structure:
 - `internal/ports`
 - `internal/adapters/http`
 - `internal/adapters/postgres`
-- `internal/adapters/redis`
+- `internal/adapters/rabbitmq`
 - `internal/adapters/storage`
 - `internal/adapters/ai`
 - `internal/adapters/renderer`
@@ -66,6 +68,8 @@ Environment configuration is now in `.env`:
 - `DATA_DIR`
 - `RABBITMQ_URL`
 - `RABBITMQ_QUEUE`
+- `OPENAI_API_KEY`
+- `OPENAI_TEXT_MODEL`
 
 ## Run
 
