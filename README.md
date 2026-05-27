@@ -12,6 +12,7 @@ This repository now includes Milestone 1, Milestone 2, and Milestone 3 backend b
 - job polling endpoint with real status transitions
 - scene metadata generation in worker (OpenAI with local fallback)
 - generated scenes included in storyboard result response
+- uploaded product images are attached as vision inputs in the OpenAI scene generation request (up to 4 images, max 2MB each)
 
 ## Architecture Layout
 

@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -41,16 +43,25 @@ func (c *OpenAIClient) GenerateScenes(ctx context.Context, input ports.SceneGene
 		return fallbackScenes(input.Project), nil
 	}
 
+	userContent := make([]map[string]any, 0, 1+len(input.Assets))
+	userContent = append(userContent, map[string]any{
+		"type": "text",
+		"text": buildScenePrompt(input.Project),
+	})
+
+	imageParts := buildImageParts(input.Assets)
+	userContent = append(userContent, imageParts...)
+
 	reqBody := map[string]any{
 		"model": c.model,
-		"messages": []map[string]string{
+		"messages": []map[string]any{
 			{
 				"role":    "system",
 				"content": "You are an expert ad storyboard director. Return valid JSON only.",
 			},
 			{
 				"role":    "user",
-				"content": buildScenePrompt(input.Project),
+				"content": userContent,
 			},
 		},
 		"response_format": map[string]string{
@@ -124,6 +135,44 @@ func (c *OpenAIClient) GenerateScenes(ctx context.Context, input ports.SceneGene
 	}
 
 	return scenes, nil
+}
+
+func buildImageParts(assets []domain.Asset) []map[string]any {
+	const maxImages = 4
+	const maxImageBytes = 2_000_000
+
+	parts := make([]map[string]any, 0, maxImages)
+	count := 0
+
+	for _, asset := range assets {
+		if count >= maxImages {
+			break
+		}
+		if asset.AssetType != "input_product_image" {
+			continue
+		}
+
+		fileBytes, err := os.ReadFile(asset.FileURL)
+		if err != nil || len(fileBytes) == 0 || len(fileBytes) > maxImageBytes {
+			continue
+		}
+
+		mimeType := strings.TrimSpace(asset.MimeType)
+		if mimeType == "" {
+			mimeType = "image/png"
+		}
+
+		dataURL := fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(fileBytes))
+		parts = append(parts, map[string]any{
+			"type": "image_url",
+			"image_url": map[string]any{
+				"url": dataURL,
+			},
+		})
+		count++
+	}
+
+	return parts
 }
 
 type chatCompletionResponse struct {
