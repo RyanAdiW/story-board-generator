@@ -5,6 +5,7 @@ import (
 
 	"story-board-generator/internal/config"
 	httpapi "story-board-generator/internal/http"
+	"story-board-generator/internal/queue"
 	"story-board-generator/internal/store"
 )
 
@@ -16,7 +17,13 @@ func main() {
 		log.Fatalf("init store: %v", err)
 	}
 
-	handler := httpapi.NewHandler(repo, cfg.UploadDir)
+	queueClient, err := queue.NewClient(cfg.RabbitMQURL, cfg.RabbitMQQueue)
+	if err != nil {
+		log.Fatalf("init queue client: %v", err)
+	}
+	defer queueClient.Close()
+
+	handler := httpapi.NewHandler(repo, cfg.UploadDir, queueClient)
 	e := httpapi.NewRouter(handler)
 
 	log.Printf("api listening on :%s", cfg.Port)

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"story-board-generator/internal/domain"
 )
@@ -96,6 +97,64 @@ func (s *Store) GetJob(projectID, jobID string) (domain.StoryboardJob, error) {
 	return job, nil
 }
 
+func (s *Store) UpdateJobProcessing(projectID, jobID, step string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	job, ok := s.jobs[jobID]
+	if !ok || job.ProjectID != projectID {
+		return ErrProjectNotFound
+	}
+
+	job.Status = "processing"
+	job.CurrentStep = step
+	job.Error = ""
+	job.UpdatedAt = nowUTC()
+	job.CompletedAt = nil
+	s.jobs[jobID] = job
+
+	return s.persist()
+}
+
+func (s *Store) UpdateJobCompleted(projectID, jobID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	job, ok := s.jobs[jobID]
+	if !ok || job.ProjectID != projectID {
+		return ErrProjectNotFound
+	}
+
+	completedAt := nowUTC()
+	job.Status = "completed"
+	job.CurrentStep = "completed"
+	job.Error = ""
+	job.UpdatedAt = completedAt
+	job.CompletedAt = &completedAt
+	s.jobs[jobID] = job
+
+	return s.persist()
+}
+
+func (s *Store) UpdateJobFailed(projectID, jobID, step, errMessage string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	job, ok := s.jobs[jobID]
+	if !ok || job.ProjectID != projectID {
+		return ErrProjectNotFound
+	}
+
+	job.Status = "failed"
+	job.CurrentStep = step
+	job.Error = errMessage
+	job.UpdatedAt = nowUTC()
+	job.CompletedAt = nil
+	s.jobs[jobID] = job
+
+	return s.persist()
+}
+
 func (s *Store) load() error {
 	content, err := os.ReadFile(s.path)
 	if err != nil {
@@ -140,4 +199,8 @@ func (s *Store) persist() error {
 	}
 
 	return nil
+}
+
+func nowUTC() time.Time {
+	return time.Now().UTC()
 }

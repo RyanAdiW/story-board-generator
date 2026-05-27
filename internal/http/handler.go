@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"story-board-generator/internal/domain"
+	"story-board-generator/internal/queue"
 	"story-board-generator/internal/store"
 )
 
@@ -31,12 +33,14 @@ const maxImages = 10
 type Handler struct {
 	repo       *store.Store
 	uploadsDir string
+	enqueuer   queue.Enqueuer
 }
 
-func NewHandler(repo *store.Store, uploadsDir string) *Handler {
+func NewHandler(repo *store.Store, uploadsDir string, enqueuer queue.Enqueuer) *Handler {
 	return &Handler{
 		repo:       repo,
 		uploadsDir: uploadsDir,
+		enqueuer:   enqueuer,
 	}
 }
 
@@ -109,7 +113,7 @@ func (h *Handler) CreateStoryboard(c echo.Context) error {
 		ID:          jobID,
 		ProjectID:   projectID,
 		Status:      "pending",
-		CurrentStep: "uploading_assets",
+		CurrentStep: "queued",
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -126,6 +130,13 @@ func (h *Handler) CreateStoryboard(c echo.Context) error {
 	}); err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{
 			Message: "failed to persist project metadata",
+		})
+	}
+
+	if err := h.enqueueGenerateJob(c.Request().Context(), projectID, jobID); err != nil {
+		_ = h.repo.UpdateJobFailed(projectID, jobID, "queueing", err.Error())
+		return c.JSON(http.StatusInternalServerError, errorResponse{
+			Message: "failed to enqueue storyboard job",
 		})
 	}
 
@@ -176,7 +187,7 @@ func (h *Handler) GetJobStatus(c echo.Context) error {
 		"project_id":    job.ProjectID,
 		"status":        job.Status,
 		"current_step":  job.CurrentStep,
-		"error_message": nil,
+		"error_message": job.Error,
 	})
 }
 
@@ -247,4 +258,15 @@ func newID() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(raw), nil
+}
+
+func (h *Handler) enqueueGenerateJob(ctx context.Context, projectID, jobID string) error {
+	if h.enqueuer == nil {
+		return fmt.Errorf("queue is not configured")
+	}
+
+	return h.enqueuer.EnqueueStoryboardGenerate(ctx, queue.StoryboardGeneratePayload{
+		ProjectID: projectID,
+		JobID:     jobID,
+	})
 }

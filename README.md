@@ -1,12 +1,15 @@
 # Story Board Generator Backend (Milestone 1)
 
-This repository now includes Milestone 1 backend basics:
+This repository now includes Milestone 1 and Milestone 2 backend basics:
 
 - Echo HTTP server
 - `POST /api/v1/storyboards` endpoint
 - multipart form validation
 - local product image upload
 - local metadata persistence
+- RabbitMQ-backed async job queue
+- worker service for background processing
+- job polling endpoint with real status transitions
 
 ## API Endpoints
 
@@ -45,12 +48,20 @@ Environment configuration is now in `.env`:
 - `APP_PORT`
 - `UPLOAD_DIR`
 - `DATA_DIR`
+- `RABBITMQ_URL`
+- `RABBITMQ_QUEUE`
 
 ## Run
 
 ```bash
 make tidy
-make run
+make run-api
+```
+
+Run worker in a separate terminal:
+
+```bash
+make run-worker
 ```
 
 `make` expects `go` to be available in your shell PATH.
