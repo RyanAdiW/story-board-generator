@@ -9,6 +9,7 @@ import (
 	aiadapter "story-board-generator/internal/adapters/ai"
 	"story-board-generator/internal/adapters/postgres"
 	queueadapter "story-board-generator/internal/adapters/rabbitmq"
+	"story-board-generator/internal/adapters/storage"
 	"story-board-generator/internal/app"
 	"story-board-generator/internal/config"
 	"story-board-generator/internal/worker"
@@ -28,8 +29,14 @@ func main() {
 	}
 	defer consumer.Close()
 
-	aiClient := aiadapter.NewOpenAIClient(cfg.OpenAIAPIKey, cfg.OpenAITextModel)
-	generationService := app.NewGenerationService(repo, aiClient)
+	sceneAIClient := aiadapter.NewOpenAIClient(cfg.OpenAIAPIKey, cfg.OpenAITextModel)
+	imageAIClient := aiadapter.NewImageClient(cfg.OpenAIAPIKey, cfg.OpenAIImageModel, cfg.OpenAIImageSize, cfg.OpenAIImageQuality)
+	generationService := app.NewGenerationService(
+		repo,
+		sceneAIClient,
+		imageAIClient,
+		storage.NewS3Storage(cfg.UploadDir),
+	)
 	processor := worker.NewProcessor(generationService)
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()

@@ -75,6 +75,22 @@ func (r *Repository) SaveScenes(projectID string, scenes []domain.Scene) error {
 	return r.persist()
 }
 
+func (r *Repository) AddAssets(projectID string, assets []domain.Asset) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, ok := r.projects[projectID]; !ok {
+		return errNotFound()
+	}
+
+	if len(assets) == 0 {
+		return nil
+	}
+
+	r.assets[projectID] = append(r.assets[projectID], assets...)
+	return r.persist()
+}
+
 func (r *Repository) GetProjectBundle(projectID string) (domain.ProjectBundle, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

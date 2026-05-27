@@ -11,6 +11,7 @@ var ErrNotFound = errors.New("not found")
 type Repository interface {
 	SaveProjectBundle(bundle domain.ProjectBundle) error
 	SaveScenes(projectID string, scenes []domain.Scene) error
+	AddAssets(projectID string, assets []domain.Asset) error
 	GetProjectBundle(projectID string) (domain.ProjectBundle, error)
 	GetJob(projectID, jobID string) (domain.StoryboardJob, error)
 	UpdateJobProcessing(projectID, jobID, step string) error

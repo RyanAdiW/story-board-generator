@@ -1,6 +1,6 @@
-# Story Board Generator Backend (Milestone 3)
+# Story Board Generator Backend (Milestone 4)
 
-This repository now includes Milestone 1, Milestone 2, and Milestone 3 backend basics:
+This repository now includes Milestone 1, Milestone 2, Milestone 3, and Milestone 4 backend basics:
 
 - Echo HTTP server
 - `POST /api/v1/storyboards` endpoint
@@ -13,6 +13,8 @@ This repository now includes Milestone 1, Milestone 2, and Milestone 3 backend b
 - scene metadata generation in worker (OpenAI with local fallback)
 - generated scenes included in storyboard result response
 - uploaded product images are attached as vision inputs in the OpenAI scene generation request (up to 4 images, max 2MB each)
+- scene image generation per prompt (OpenAI image model with local fallback image)
+- generated scene image assets are stored and linked back to each scene
 
 ## Architecture Layout
 
@@ -71,6 +73,9 @@ Environment configuration is now in `.env`:
 - `RABBITMQ_QUEUE`
 - `OPENAI_API_KEY`
 - `OPENAI_TEXT_MODEL`
+- `OPENAI_IMAGE_MODEL`
+- `OPENAI_IMAGE_SIZE`
+- `OPENAI_IMAGE_QUALITY`
 
 ## Run
 

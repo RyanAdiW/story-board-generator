@@ -15,5 +15,7 @@ type Scene struct {
 	OnScreenText      string    `json:"on_screen_text"`
 	Notes             string    `json:"notes,omitempty"`
 	ImagePrompt       string    `json:"image_prompt"`
+	ImageAssetID      string    `json:"image_asset_id,omitempty"`
+	ImageURL          string    `json:"image_url,omitempty"`
 	CreatedAt         time.Time `json:"created_at"`
 }
